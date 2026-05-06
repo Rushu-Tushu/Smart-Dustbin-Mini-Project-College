@@ -46,6 +46,8 @@ const createBin = async (req, res, next) => {
     const bin = await Bin.create({ binId, location, fillLevel: fillLevel || 0, assignedWorker: assignedWorker || null });
     await bin.populate('assignedWorker', 'name email');
 
+    req.app.get('io').emit('bin:created', bin);
+
     res.status(201).json({ success: true, message: 'Bin created successfully', bin });
   } catch (error) {
     next(error);
@@ -69,6 +71,8 @@ const updateBin = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Bin not found' });
     }
 
+    req.app.get('io').emit('bin:updated', bin);
+
     res.json({ success: true, message: 'Bin updated successfully', bin });
   } catch (error) {
     next(error);
@@ -82,6 +86,9 @@ const deleteBin = async (req, res, next) => {
     if (!bin) {
       return res.status(404).json({ success: false, message: 'Bin not found' });
     }
+
+    req.app.get('io').emit('bin:deleted', req.params.id);
+
     res.json({ success: true, message: 'Bin removed successfully' });
   } catch (error) {
     next(error);
@@ -110,6 +117,8 @@ const updateLevel = async (req, res, next) => {
     if (!bin) {
       return res.status(404).json({ success: false, message: `Bin with ID ${binId} not found` });
     }
+
+    req.app.get('io').emit('bin:updated', bin);
 
     res.json({ success: true, message: 'Fill level updated', bin });
   } catch (error) {

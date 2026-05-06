@@ -33,6 +33,8 @@ const markBinCleaned = async (req, res, next) => {
     await bin.save();
     await bin.populate('assignedWorker', 'name email');
 
+    req.app.get('io').emit('bin:updated', bin);
+
     res.json({ success: true, message: 'Bin marked as cleaned', bin });
   } catch (error) {
     next(error);

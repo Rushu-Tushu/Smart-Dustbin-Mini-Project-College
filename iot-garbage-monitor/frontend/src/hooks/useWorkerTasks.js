@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { workerAPI } from '../services/api';
+import { connectSocket, disconnectSocket } from '../services/socket';
 import toast from 'react-hot-toast';
 
 export const useWorkerTasks = () => {
@@ -22,9 +23,23 @@ export const useWorkerTasks = () => {
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
+  // Real-time updates: patch any task that was updated by IoT or admin
+  useEffect(() => {
+    const socket = connectSocket();
+
+    socket.on('bin:updated', (updatedBin) => {
+      setTasks(prev => prev.map(t => t._id === updatedBin._id ? updatedBin : t));
+    });
+
+    return () => {
+      socket.off('bin:updated');
+      disconnectSocket();
+    };
+  }, []);
+
   const markCleaned = async (id) => {
     const { data } = await workerAPI.markCleaned(id);
-    setTasks(prev => prev.map(t => t._id === id ? data.bin : t));
+    // socket 'bin:updated' event will patch the task in state
     toast.success('Bin marked as cleaned! 🗑️');
     return data.bin;
   };
